@@ -1,0 +1,3 @@
+algo used for thinning is described in Davies CH 9 Skeletonization (sequential + parallel)
+background elimination is done by subtracting previous frame from the current one
+
