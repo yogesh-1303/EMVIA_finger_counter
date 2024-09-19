@@ -1,1 +1,0 @@
-finger_count_speedup.o: finger_count_speedup.cpp

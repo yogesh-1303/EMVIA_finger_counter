@@ -1,5 +1,5 @@
 finger_count.cpp is the main program
-finger_count_speedup.cpp is the program with speedup (actually slowed down) by single thread per frame
-finger_count_speedup2.cpp is the program with speedup (actually slowed down) by 8 threads per frame
+finger_count_speedup.cpp is the program with speedup by single thread per frame
+finger_count_speedup2.cpp is the program with speedup by 8 threads per frame
 Images are present in images folder of the board
 

@@ -191,108 +191,100 @@ int main(int argc, char *argv[]){
 	
 	file input, output, intermediate;
 	for(i=1;i<=NUM_IMGS;i++){
-	//input and output files
-	sprintf(input.filenames[i], "IN_hand%d.ppm", i);
-	sprintf(output.filenames[i], "OUT_hand%d.pgm", i);
-	sprintf(intermediate.filenames[i], "INTER_hand%d.pgm", i);
-	//checking for error in opening files
-	input.img[i] = fopen(input.filenames[i], "rb");
-		if(input.img[i] == NULL)
-		{
-			printf("\nError opening image");
-			exit(-1);
-		}
-		
-		output.img[i] = fopen(output.filenames[i], "wb+");
-		intermediate.img[i] = fopen(intermediate.filenames[i], "wb+");
-		
-		if(output.img[i] == NULL)
-		{
-			printf("\nError opening image");
-			exit(-1);
-		}
-	
-		if(intermediate.img[i] == NULL)
-		{
-			printf("\nError opening image");
-			exit(-1);
-		}	
-	
-	//scanning the header of input image
-	for(int j=0; j<17; j++){
-	 fscanf(input.img[i], "%c", header[i]+j);
-	  //printf("%x \n", header[j]);
-	 }
-	 //puts(header);
-	 header[i][17] = '\0';
-	 
-	 puts(input.filenames[i]);
-	puts(output.filenames[i]);
-	 
-	 //writing the header to the output file
-	 for(int j=0; j<17; j++){
-	 if(j==1){ 
-	 	fprintf(output.img[i], "%c", '5');
-	 	}
-	 else{
-		fprintf(output.img[i], "%c", header[i][j]);	 	
-	 //printf("\t%x",header[i][j]);
-	 }}
-	 //puts(header[i]);
-	 header[i][17] = '\0';
-	 
-	 //writing the header to the output file
-	 for(int j=0; j<17; j++){
-	 if(j==1){ 
-	 	fprintf(intermediate.img[i], "%c", '5');
-	 	}
-	 else{
-		fprintf(intermediate.img[i], "%c", header[i][j]);	 	
-	 //printf("\t%x",header[i][j]);
-	 }}
-	 //puts(header[i]);
-	 header[i][17] = '\0';
-	 
-	 //raster through the image for scanning and converting it into a 
-	 //binary image
-	 for( y=0; y<HEIGHT; y++){
-	 	for( x=0; x<WIDTH; x++){
-	 	
-	 	//scan the pixels (1 byte each for RGB)
-	 		fscanf(input.img[i], "%c", color.red[y]+x);
-			fscanf(input.img[i], "%c", color.green[y]+x);
-			fscanf(input.img[i], "%c", color.blue[y]+x);
-		
-		//convert into gray scale using the formula 
-		//G = 0.299R + 0.587G + 0.114B
-		
-			arr[i][y][x] =((float)color.red[y][x] * 0.299) + 
-						((float)color.green[y][x] * 0.587) + 
-						((float)color.blue[y][x] * 0.114);
-					
-			backgrnd_el();			
-		//convert into binary image by thresholding	
-			threshold(100);	
-			//fprintf(output.img[i], "%c", arr[i][y][x]);
-			//printf("%d", arr[y][x]);
-				
-	 }
-	}
-	
-	for( y=0; y<HEIGHT; y++){
-	 	for( x=0; x<WIDTH; x++){
-	 		fprintf(intermediate.img[i], "%c", arr[i][y][x]);
-	 	}
-	 }
-	
-	thinning_algo();
+		//input and output files
+		sprintf(input.filenames[i], "IN_hand%d.ppm", i);
+		sprintf(output.filenames[i], "OUT_hand%d.pgm", i);
+		sprintf(intermediate.filenames[i], "INTER_hand%d.pgm", i);
+		//checking for error in opening files
+		input.img[i] = fopen(input.filenames[i], "rb");
+			if(input.img[i] == NULL)
+			{
+				printf("\nError opening image");
+				exit(-1);
+			}
 
-	//writing the final pixel values to the output image
-	for( y=0; y<HEIGHT; y++){
-	 	for( x=0; x<WIDTH; x++){
-	 		fprintf(output.img[i], "%c", arr[i][y][x]);
-	 	}
-	 }
+			output.img[i] = fopen(output.filenames[i], "wb+");
+			intermediate.img[i] = fopen(intermediate.filenames[i], "wb+");
+
+			if(output.img[i] == NULL)
+			{
+				printf("\nError opening image");
+				exit(-1);
+			}
+
+			if(intermediate.img[i] == NULL)
+			{
+				printf("\nError opening image");
+				exit(-1);
+			}	
+
+		//scanning the header of input image
+		for(int j=0; j<17; j++){
+		 	fscanf(input.img[i], "%c", header[i]+j);
+		}
+		header[i][17] = '\0';
+
+		puts(input.filenames[i]);
+		puts(output.filenames[i]);
+
+		//writing the header to the output file
+		for(int j=0; j<17; j++){
+			if(j==1){ 
+				fprintf(output.img[i], "%c", '5');
+			}
+			else{
+				fprintf(output.img[i], "%c", header[i][j]);	 	
+			}
+		}
+		//puts(header[i]);
+		header[i][17] = '\0';
+		//writing the header to the output file
+		for(int j=0; j<17; j++){
+			if(j==1){ 
+				fprintf(intermediate.img[i], "%c", '5');
+			}
+			else{
+				fprintf(intermediate.img[i], "%c", header[i][j]);	 	
+			}
+		}
+		header[i][17] = '\0';
+
+		 //raster through the image for scanning and converting it into a 
+		 //binary image
+		for( y=0; y<HEIGHT; y++){
+		 	for( x=0; x<WIDTH; x++){
+			
+		 		//scan the pixels (1 byte each for RGB)
+		 		fscanf(input.img[i], "%c", color.red[y]+x);
+				fscanf(input.img[i], "%c", color.green[y]+x);
+				fscanf(input.img[i], "%c", color.blue[y]+x);
+
+				//convert into gray scale using the formula 
+				//G = 0.299R + 0.587G + 0.114B
+				arr[i][y][x] =((float)color.red[y][x] * 0.299) + 
+								((float)color.green[y][x] * 0.587) + 
+								((float)color.blue[y][x] * 0.114);
+
+				backgrnd_el();			
+				threshold(100);	
+
+		 	}
+		}
+
+		for( y=0; y<HEIGHT; y++){
+		 	for( x=0; x<WIDTH; x++){
+		 		fprintf(intermediate.img[i], "%c", arr[i][y][x]);
+		 	}
+		}
+
+		thinning_algo();
+
+		//writing the final pixel values to the output image
+		for( y=0; y<HEIGHT; y++){
+		 	for( x=0; x<WIDTH; x++){
+		 		fprintf(output.img[i], "%c", arr[i][y][x]);
+		 	}
+		}
 	}
 	
 	vector<Vec4i> lines;

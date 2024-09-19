@@ -41,23 +41,24 @@ void frame_analysis(){
 
 	long double time_diff=0;
 	
-		framecnt++;
+	framecnt++;
 	
-		if(frame_stop_time.tv_sec == frame_start_time.tv_sec)                   //If the second has not changed
-    time_diff = ((long double) frame_stop_time.tv_nsec - (long double) frame_start_time.tv_nsec)/NSEC_PER_SEC;
+	//If the second has not changed
+	if(frame_stop_time.tv_sec == frame_start_time.tv_sec)                   
+    	time_diff = ((long double) frame_stop_time.tv_nsec - (long double) frame_start_time.tv_nsec)/NSEC_PER_SEC;
    
     //if the seconds field has changed from start time to stop time
     else{
         //when the nano seconds of start time > that of stop time (e.g., start = 2s 80ns; stop = 3s 40ns)
-         if (frame_start_time.tv_nsec > frame_stop_time.tv_nsec)	{
-		time_diff = ((((long double) frame_stop_time.tv_sec - (long double) frame_start_time.tv_sec - 1) * NSEC_PER_SEC)
-                            + (NSEC_PER_SEC - ((long double) frame_start_time.tv_nsec - (long double) frame_stop_time.tv_nsec)))/NSEC_PER_SEC;
+        if (frame_start_time.tv_nsec > frame_stop_time.tv_nsec)	{
+			time_diff = ((((long double) frame_stop_time.tv_sec - (long double) frame_start_time.tv_sec - 1) * NSEC_PER_SEC)
+                + (NSEC_PER_SEC - ((long double) frame_start_time.tv_nsec - (long double) frame_stop_time.tv_nsec)))/NSEC_PER_SEC;
 		}
         //when nano seconds of stop time > that of start time (e.g., start = 2s 500ns; stop = 4s 600ns)
-        else 
-        time_diff = ((((long double) frame_stop_time.tv_sec - (long double) frame_start_time.tv_sec) * NSEC_PER_SEC) + 
-                                ((long double) frame_stop_time.tv_nsec - (long double) frame_start_time.tv_nsec))/NSEC_PER_SEC;
-        }                        
+    	else 
+        	time_diff = ((((long double) frame_stop_time.tv_sec - (long double) frame_start_time.tv_sec) * NSEC_PER_SEC) + 
+                ((long double) frame_stop_time.tv_nsec - (long double) frame_start_time.tv_nsec))/NSEC_PER_SEC;
+    }                        
     
     //calculating the max and min time taken by a frame
     if(time_diff > max_time)
@@ -65,10 +66,10 @@ void frame_analysis(){
     if(time_diff < min_time)
             min_time = time_diff;
     //sum of rates
-        sum_rate += (1/time_diff);
+    sum_rate += (1/time_diff);
         
-        syslog(LOG_USER, "\nFrame #%d   time taken = %Lf \n current frame rate = %Lf Hz, max frame rate = %Lf Hz,  worst-case frame rate = %Lf Hz, avg rate = %Lf Hz, jitter = %Lf Hz",
-                                framecnt, time_diff, 1/time_diff, 1/min_time, 1/max_time, sum_rate/(long double)framecnt, (1/min_time)-(1/max_time));
+    syslog(LOG_USER, "\nFrame #%d   time taken = %Lf \n current frame rate = %Lf Hz, max frame rate = %Lf Hz,  worst-case frame rate = %Lf Hz, avg rate = %Lf Hz, jitter = %Lf Hz",
+        framecnt, time_diff, 1/time_diff, 1/min_time, 1/max_time, sum_rate/(long double)framecnt, (1/min_time)-(1/max_time));
 }
 
 int main(int argc, char **argv)
@@ -104,33 +105,30 @@ int main(int argc, char **argv)
 		cap.read(frame);
 		if(frame.empty()) break;
 		clock_gettime(CLOCK_REALTIME, &frame_start_time);
-		//cvtColor(frame, gray_frame, CV_BGR2GRAY);
-		//threshold(gray_frame, thresh_frame, 130, 255, CV_THRESH_BINARY_INV);
-		//Threshold the image using inRange function of openCV
 		cvtColor(frame, frame, CV_BGR2HSV);
 		inRange(frame, Scalar(0, 10, 60), Scalar(25, 150, 255), thresh_frame);
-		//inRange(frame, Scalar(0, 58, 30), Scalar(33, 150, 255), thresh_frame);
 		
 		//repeated median blurring for noise reduction with increasing kernel sizes
 		for(int j=1; j<=15; j+=2)
-		medianBlur(thresh_frame, thresh_frame, j);
+			medianBlur(thresh_frame, thresh_frame, j);
+		
 		Mat skel(thresh_frame.size(), CV_8UC1, Scalar(0));
 		iterations = 0;
 	
 		//do the morphological operation for skeletonization using repeated erosion and dilation
 		do{
-		erode(thresh_frame, erode_frame, kernel, Point(-1,-1), 1);
-		dilate(erode_frame, dilate_frame, kernel2, Point(-1,-1), 1);
-		subtract(thresh_frame, dilate_frame, sub_frame);
-		bitwise_or(skel, sub_frame, skel);
-		erode_frame.copyTo(thresh_frame);
-		done = (countNonZero(thresh_frame)==0);
-		iterations++;
+			erode(thresh_frame, erode_frame, kernel, Point(-1,-1), 1);
+			dilate(erode_frame, dilate_frame, kernel2, Point(-1,-1), 1);
+			subtract(thresh_frame, dilate_frame, sub_frame);
+			bitwise_or(skel, sub_frame, skel);
+			erode_frame.copyTo(thresh_frame);
+			done = (countNonZero(thresh_frame)==0);
+			iterations++;
 		}while((!done)&&(iterations<100)); 
 
 		int num_line=0;
-		//detecting and drawing lines on the skeletal image and counting them
 		
+		//detecting and drawing lines on the skeletal image and counting them
 		HoughLinesP(skel, lines, 1, CV_PI/180, 50, 30, 10 );  //45 20 10
 
     	for( size_t i = 0; i < lines.size(); i++ )
@@ -140,7 +138,6 @@ int main(int argc, char **argv)
     	}
     
     	clock_gettime(CLOCK_REALTIME, &frame_stop_time);
-    	//cout<<"\nframe num: "<<frame_num<<"\tlines = "<<lines.size();//<<"\tnumber of lines = "<<num_line;
     	const String fingers = format ("%d", lines.size()); 
    		putText(frame, fingers, Point(5,50),FONT_HERSHEY_SIMPLEX, 2,  Scalar(255,0,0), 2, LINE_AA, false);
    		

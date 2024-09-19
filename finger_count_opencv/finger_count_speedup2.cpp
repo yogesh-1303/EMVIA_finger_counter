@@ -25,7 +25,6 @@
 #define HEIGHT 	480
 #define NSEC_PER_SEC	1000000000	
 #define NUM_THREADS 8
-//#define PTHREAD
 
 using namespace cv;
 using namespace std;
@@ -55,20 +54,21 @@ void frame_analysis(){
 	
 		framecnt++;
 	
-		if(frame_stop_time.tv_sec == frame_start_time.tv_sec)                   //If the second has not changed
-    time_diff = ((long double) frame_stop_time.tv_nsec - (long double) frame_start_time.tv_nsec)/NSEC_PER_SEC;
+	//If the second has not changed	
+	if(frame_stop_time.tv_sec == frame_start_time.tv_sec)
+    	time_diff = ((long double) frame_stop_time.tv_nsec - (long double) frame_start_time.tv_nsec)/NSEC_PER_SEC;
    
     //if the seconds field has changed from start time to stop time
     else{
         //when the nano seconds of start time > that of stop time (e.g., start = 2s 80ns; stop = 3s 40ns)
          if (frame_start_time.tv_nsec > frame_stop_time.tv_nsec)	{
-		time_diff = ((((long double) frame_stop_time.tv_sec - (long double) frame_start_time.tv_sec - 1) * NSEC_PER_SEC)
-                            + (NSEC_PER_SEC - ((long double) frame_start_time.tv_nsec - (long double) frame_stop_time.tv_nsec)))/NSEC_PER_SEC;
+			time_diff = ((((long double) frame_stop_time.tv_sec - (long double) frame_start_time.tv_sec - 1) * NSEC_PER_SEC)
+                        + (NSEC_PER_SEC - ((long double) frame_start_time.tv_nsec - (long double) frame_stop_time.tv_nsec)))/NSEC_PER_SEC;
 		}
         //when nano seconds of stop time > that of start time (e.g., start = 2s 500ns; stop = 4s 600ns)
         else 
-        time_diff = ((((long double) frame_stop_time.tv_sec - (long double) frame_start_time.tv_sec) * NSEC_PER_SEC) + 
-                                ((long double) frame_stop_time.tv_nsec - (long double) frame_start_time.tv_nsec))/NSEC_PER_SEC;
+        	time_diff = ((((long double) frame_stop_time.tv_sec - (long double) frame_start_time.tv_sec) * NSEC_PER_SEC) + 
+                        ((long double) frame_stop_time.tv_nsec - (long double) frame_start_time.tv_nsec))/NSEC_PER_SEC;
         }                        
     
     //calculating the max and min time taken by a frame
@@ -77,19 +77,20 @@ void frame_analysis(){
     if(time_diff < min_time)
             min_time = time_diff;
     //sum of rates
-        sum_rate += (1/time_diff);
+    sum_rate += (1/time_diff);
         
-        syslog(LOG_USER, "\nFrame #%d   time taken = %Lf \n current frame rate = %Lf Hz, max frame rate = %Lf Hz,  worst-case frame rate = %Lf Hz, avg rate = %Lf Hz, jitter = %Lf Hz",
+    syslog(LOG_USER, "\nFrame #%d   time taken = %Lf \n current frame rate = %Lf Hz, max frame rate = %Lf Hz,  worst-case frame rate = %Lf Hz, avg rate = %Lf Hz, jitter = %Lf Hz",
                                 framecnt, time_diff, 1/time_diff, 1/min_time, 1/max_time, sum_rate/(long double)framecnt, (1/min_time)-(1/max_time));
 }
 
 Mat kernel = getStructuringElement(MORPH_CROSS, Size(3,3));
-	Mat kernel2 = getStructuringElement(MORPH_CROSS, Size(5,5));
+Mat kernel2 = getStructuringElement(MORPH_CROSS, Size(5,5));
 vector<Mat> v;
 Mat dest(frame.size(), CV_8UC1);
- //IplImage copy = frame;
-   // IplImage new_frame = &copy;
+
 int itr=0;
+
+//callback for a thread processing the frames
 void *thread_proc(void *threadp){
 	
 	int done, iterations;
@@ -102,8 +103,8 @@ void *thread_proc(void *threadp){
 	roi.height = (frame.rows/8)-1;
 	
 	Mat seg(frame, roi);
-	//Threshold the image using inRange function of openCV
 	
+	//Threshold the image using inRange function of openCV
 	cvtColor(seg, seg, CV_BGR2HSV);
 	inRange(seg, Scalar(0, 10, 60), Scalar(25, 150, 255), seg);
 	Mat blur_seg(seg.size(), CV_8UC1);
@@ -117,7 +118,7 @@ void *thread_proc(void *threadp){
 	iterations = 0;
 
 	//do the morphological operation for skeletonization using repeated erosion and dilation
-		do{
+	do{
 		erode(blur_seg, erode_seg, kernel, Point(-1,-1), 1);
 		dilate(erode_seg, dilate_seg, kernel2, Point(-1,-1), 1);
 		subtract(blur_seg, dilate_seg, sub_seg);
@@ -125,8 +126,9 @@ void *thread_proc(void *threadp){
 		erode_seg.copyTo(blur_seg);
 		done = (countNonZero(blur_seg)==0);
 		iterations++;
-		}while((!done)&&(iterations<100)); 
+	}while((!done)&&(iterations<100)); 
 		
+	//HoughLines transformation to draw lines on skeletonized frame thread
 	HoughLinesP(skel, lines, 1, CV_PI/180, 50, 10, 20 );
 	for( size_t i = 0; i < lines.size(); i++ )
     	{
@@ -136,9 +138,6 @@ void *thread_proc(void *threadp){
 
 	imwrite(format("final_skel_img%d_%d.jpg", itr, threadParams->threadIdx), skel);
 	imwrite(format("final_seg_img%d_%d.jpg", itr, threadParams->threadIdx), seg);
-	//seg.copyTo(dest);
-	//cout<<seg.type();
-	//dest(roi) = seg.clone();
 	
 }
 
@@ -169,11 +168,8 @@ int main(int argc, char **argv)
 	}
 	
 	Mat erode_frame, dilate_frame, sub_frame, thresh_frame, canny_frame, gray_frame; 
-	
 
 	int frame_num=0;
-	//int done, iterations, f=0;
-	//vector<Vec4i> lines;
 	
 	while(1){
 		cap.read(frame);
@@ -182,21 +178,20 @@ int main(int argc, char **argv)
 
 		clock_gettime(CLOCK_REALTIME, &frame_start_time);
 		for(int i=0; i < NUM_THREADS; i++)
-   {
-       threadParams[i].threadIdx=i;
+   		{
+       		threadParams[i].threadIdx=i;
 
-       if(pthread_create(&threads[i],   // pointer to thread descriptor
-                      NULL,     // use default attributes
-                      thread_proc, // thread function entry point
-                      (void *)&(threadParams[i]) // parameters to pass in
+       		if(pthread_create(&threads[i],   		// pointer to thread descriptor
+                      NULL,     			 		// use default attributes
+                      thread_proc, 			 		// thread function entry point
+                      (void *)&(threadParams[i]) 	// parameters to pass in
                      )!=0) printf("Not Created");
-    //cout<<"\nthread number "<<threadParams[i].threadIdx<<" created";
-   }
+   		}
  
-   for(int i=0;i<NUM_THREADS;i++)
+    for(int i=0;i<NUM_THREADS;i++)
        pthread_join(threads[i], NULL);
-   clock_gettime(CLOCK_REALTIME, &frame_stop_time);
-   //frame_analysis();
+    
+	clock_gettime(CLOCK_REALTIME, &frame_stop_time);
 	itr++;	
 	}
 
