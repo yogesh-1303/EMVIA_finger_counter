@@ -12,18 +12,18 @@ The project is made on a Jetson nano board with C270 HD webcam for video capturi
 ## Implementation
 The captured video is processed one frame at a time. First, the frame is converted into a binary image using thresholding. For ground-up approach, HSV and binary thresholding are used. Then, the frame goes through skeletonization to have only necessary information. This is done using repeated erosion and dilation in Opencv and using parallel and sequential thinning in ground-up. Finally, hough lines transform is applied to detect the upright fingers. To speedup, each frame is divide into 8 threads, utilizing multiple cores of Jetson nano for multiprocessing. The threads are stiched together again to form the image back after processing. Here is the flow diagram for the whole process:
 
-![Algorithm FLowchart](image.png)
+![Algorithm FLowchart](algo_flowchart.png)
 
 ## ANALYSIS AND TAKEAWAYS
 
 ### Reliability Analysis
-![Reliability analysis graphs](image-1.png)<br /><br />
-![Reliability analysis math](image-2.png)<br /><br />
-![Reliability analysis fmeasure](image.png)
+![Reliability analysis graphs](analysis_graph.png)<br /><br />
+![Reliability analysis math](analysis_maths.png)<br /><br />
+![Reliability analysis fmeasure](analysis_fmeasure.png)
 
 ### Performance Analysis
-![CPU usage](image.png) <br /><br />
-![Frame rate analysis](image.png)
+![CPU usage](cpu_usage.png) <br /><br />
+![Frame rate analysis](framte_rate.png)
 
 
 ### Takeaways
@@ -42,5 +42,5 @@ The captured video is processed one frame at a time. First, the frame is convert
 4. This suggests that skeletonization is computationally more expensive by far, followed by skeletonization.
 
 ## TESTING
-![testing](image.png)<br /><br />
+![testing](testing.png)<br /><br />
 Performed tests as proof of concept by rendering the processed frames after completing each of these operations - thresholding, skeletonization, and hough lines transform. 
